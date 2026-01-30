@@ -1,4 +1,4 @@
-from models.Classroom import ClassRoom
+from models.classroom import ClassRoom
 from models.student import Student
 
 oop = ClassRoom("OOP")
