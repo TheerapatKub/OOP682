@@ -1,5 +1,4 @@
-from week9.moduls.person import Person
-from moduls.person import Person
+from models.person import Person
 
 class Student(Person):
     def __init__(self, pid, name, age, student_id):
