@@ -3,10 +3,20 @@ from typing import List
 from .models import Task, TaskCreate
 from .repositories import task_repo, get_task_service
 from .services import TaskService
+from database import ses  # สมมติว่ามีการตั้งค่า database session ที่นี่
+from sqlalchemy.orm import Session
+from . import models
 
+models_orm.Base.metadata.create_all(bind=engine)
 app = FastAPI()
-tack_repo = InmemoryTaskRepository()
 
+
+def get_db():
+    db =  SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 # main.py
 
 # เดิม:
