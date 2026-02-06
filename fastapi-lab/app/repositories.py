@@ -2,8 +2,8 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 from .models import Task, TaskCreate
 
+
 class ITaskRepository(ABC):
-    
     @abstractmethod
     def get_all(self) -> List[Task]:
         pass
@@ -11,10 +11,11 @@ class ITaskRepository(ABC):
     @abstractmethod
     def create(self, task: TaskCreate) -> Task:
         pass
-        
+
     @abstractmethod
     def get_by_id(self, task_id: int) -> Optional[Task]:
         pass
+
 
 class InMemoryTaskRepository(ITaskRepository):
     def __init__(self):
@@ -25,10 +26,7 @@ class InMemoryTaskRepository(ITaskRepository):
         return self.tasks
 
     def create(self, task_in: TaskCreate) -> Task:
-        task = Task(
-            id=self.current_id,
-            **task_in.dict()
-        )
+        task = Task(id=self.current_id, **task_in.dict())
         self.tasks.append(task)
         self.current_id += 1
         return task
@@ -39,52 +37,27 @@ class InMemoryTaskRepository(ITaskRepository):
                 return task
         return None
 
-# Singleton Repository Instance
-task_repo = InMemoryTaskRepository()
-
-# Dependency Provider
-def get_task_service():
-    from .services import TaskService
-    return TaskService(task_repo)
 
 from sqlalchemy.orm import Session
-from . import models_orm  # ต้องสร้าง SQLAlchemy Model แยก
+from . import models_orm
+
 
 class SqlTaskRepository(ITaskRepository):
     def __init__(self, db: Session):
         self.db = db
 
-    def get_all(self) -> List[Task]:
-        return self.db.query(models_orm.Task).all()
+    def get_all(self):
+        # ต้องใช้ TaskORM (SQLAlchemy) ในการ query
+        return self.db.query(models_orm.TaskORM).all()
 
-    def create(self, task_in: TaskCreate) -> Task:
-        db_task = models_orm.Task(**task_in.dict())
+    def create(self, task_in: TaskCreate):
+        # แปลง Pydantic (task_in) ให้กลายเป็น ORM (TaskORM) เพื่อบันทึก
+        db_task = models_orm.TaskORM(**task_in.model_dump())
         self.db.add(db_task)
         self.db.commit()
         self.db.refresh(db_task)
         return db_task
-    
+
     def get_by_id(self, id: int):
         # ... implementation ...
-        pass
-
-from sqlalchemy.orm import Session
-from . import models_orm  # ต้องสร้าง SQLAlchemy Model แยก
-
-class SqlTaskRepository(ITaskRepository):
-    def __init__(self, db: Session):
-        self.db = db
-
-    def get_all(self) -> List[Task]:
-        return self.db.query(models_orm.Task).all()
-
-    def create(self, task_in: TaskCreate) -> Task:
-        db_task = models_orm.Task(**task_in.dict())
-        self.db.add(db_task)
-        self.db.commit()
-        self.db.refresh(db_task)
-        return db_task
-    
-    def get_by_id(self, id: int):
-        # ... implementation ...
-        pass
+        return self.db.query(models_orm.TaskORM).filter(models_orm.TaskORM.id == id).first()

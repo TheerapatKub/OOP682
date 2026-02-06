@@ -6,7 +6,8 @@ class TaskService:
         self.repo = repo
 
     def get_tasks(self):
-        return self.repo.get_tasks()
+        return self.repo.get_all()
 
     def create_task(self, task_in: TaskCreate):
-        return self.repo.create_task(task_in)
+        # Business logic could go here
+        return self.repo.create(task_in)
