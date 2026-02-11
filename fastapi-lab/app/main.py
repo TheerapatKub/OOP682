@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from typing import List
 from .models import Task, TaskCreate
 from .repositories import InMemoryTaskRepository, ITaskRepository, SqlTaskRepository
@@ -36,3 +36,11 @@ def read_tasks(service: TaskService = Depends(get_task_service)):
 @app.post("/tasks", response_model=Task)
 def create_task(task: TaskCreate, service: TaskService = Depends(get_task_service)):
     return service.create_task(task)
+
+
+@app.put("/tasks/{id}/complete", response_model=Task)
+def complete_task(id: int, service: TaskService = Depends(get_task_service)):
+    task = service.complete_task(id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return task

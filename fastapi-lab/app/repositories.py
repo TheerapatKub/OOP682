@@ -16,6 +16,14 @@ class ITaskRepository(ABC):
     def get_by_id(self, task_id: int) -> Optional[Task]:
         pass
 
+    @abstractmethod
+    def get_by_title(self, title: str) -> Optional[Task]:
+        pass
+
+    @abstractmethod
+    def update(self, task_id: int, task_in: TaskCreate) -> Optional[Task]:
+        pass
+
 
 class InMemoryTaskRepository(ITaskRepository):
     def __init__(self):
@@ -34,6 +42,21 @@ class InMemoryTaskRepository(ITaskRepository):
     def get_by_id(self, task_id: int) -> Optional[Task]:
         for task in self.tasks:
             if task.id == task_id:
+                return task
+        return None
+
+    def update(self, task_id: int, task_in: TaskCreate) -> Optional[Task]:
+        task = self.get_by_id(task_id)
+        if not task:
+            return None
+        task.title = task_in.title
+        task.description = task_in.description
+        task.completed = task_in.completed
+        return task
+
+    def get_by_title(self, title: str) -> Optional[Task]:
+        for task in self.tasks:
+            if task.title == title:
                 return task
         return None
 
@@ -61,3 +84,16 @@ class SqlTaskRepository(ITaskRepository):
     def get_by_id(self, id: int):
         # ... implementation ...
         return self.db.query(models_orm.TaskORM).filter(models_orm.TaskORM.id == id).first()
+
+    def get_by_title(self, title: str):
+        return self.db.query(models_orm.TaskORM).filter(models_orm.TaskORM.title == title).first()
+
+    def update(self, task_id: int, task_in: TaskCreate):
+        db_task = self.get_by_id(task_id)
+        if not db_task:
+            return None
+        for field, value in task_in.model_dump().items():
+            setattr(db_task, field, value)
+        self.db.commit()
+        self.db.refresh(db_task)
+        return db_task
